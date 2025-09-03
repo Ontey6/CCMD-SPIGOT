@@ -1,7 +1,7 @@
 package com.ontey.files;
 
-import com.ontey.CustomCommand;
 import com.ontey.Main;
+import com.ontey.holder.CommandPaths;
 import com.ontey.log.Log;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -45,6 +45,7 @@ public class Config {
       }
       
       loadConstants();
+      CommandPaths.load();
    }
    
    public static void save() {
@@ -141,14 +142,6 @@ public class Config {
       return DEFAULT_PERMISSION.replace("%cmd", command);
    }
    
-   public static String perm(CustomCommand command) {
-      if (command.permission == null)
-         return Config.defaultPerm(command.name);
-      if (command.permission.isEmpty())
-         return null;
-      return command.permission;
-   }
-   
    // Constants
    
    public static void loadConstants() {
@@ -160,13 +153,13 @@ public class Config {
       DEFAULT_PERMISSION = getOrDefault("defaults.permission", "ccmd.command.%cmd");
       DEFAULT_USAGE = getOrDefault("defaults.usage", "/<command>");
       DEFAULT_DESCRIPTION = getOrDefault("defaults.description", "Server Command");
-      COMMAND_PREFIX = getOrDefault("format.command-prefix", "customcommand");
+      NAMESPACE = getOrDefault("format.namespace", "customcommand");
       REMOVE_NAMESPACED_PLUGIN_COMMANDS = getOrDefault("tab.remove-namespaced-plugin-commands", false);
       REMOVE_NAMESPACED_COMMANDS = getOrDefault("tab.remove-namespaced-commands", false);
       REMOVE_COLORS_IN_CONSOLE = getOrDefault("remove-colors-in-console", false);
    }
    
-   public static String PREFIX, COMMAND_PREFIX;
+   public static String PREFIX, NAMESPACE;
    
    public static String PLACEHOLDER_FORMAT, ACTIONHOLDER_FORMAT;
    

@@ -27,6 +27,7 @@ public class Execution {
    }
    
    public static void runCommands(List<String> commands, CommandSender sender, String[] args) {
+      resolveConditions(sender, args, commands);
       if(!commands.isEmpty())
          for(String cmd : commands)
             if(!formatCommand(sender, replaceArgs(cmd, args)).isEmpty())
@@ -42,27 +43,52 @@ public class Execution {
    }
    
    public static void sendAdvancedBroadcast(AdvancedBroadcast advancedBroadcast, CommandSender sender, String[] args) {
-      if (advancedBroadcast != null) {
-         String permission = advancedBroadcast.permission;
-         String condition = advancedBroadcast.condition;
-         double range = advancedBroadcast.range;
-         Location senderLoc = (sender instanceof Player p) ? p.getLocation() : null;
-         
-         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (permission != null && !player.hasPermission(permission))
+      if (advancedBroadcast == null)
+         return;
+      String permission = advancedBroadcast.permission;
+      String condition = advancedBroadcast.condition;
+      double range = advancedBroadcast.range;
+      Location senderLoc = (sender instanceof Player p) ? p.getLocation() : null;
+      
+      for (Player player : Bukkit.getOnlinePlayers()) {
+         if (permission != null && !player.hasPermission(permission))
+            continue;
+         if(!evalCondition(condition, sender, args))
+            continue;
+         if (range != -1 && senderLoc != null)
+            if (!player.getWorld().equals(senderLoc.getWorld()) || player.getLocation().distance(senderLoc) > range)
                continue;
-            if(!evalCondition(condition, sender, args))
-               continue;
-            if (range != -1 && senderLoc != null)
-               if (!player.getWorld().equals(senderLoc.getWorld()) || player.getLocation().distance(senderLoc) > range)
-                  continue;
-            for(String msg : advancedBroadcast.broadcast)
-               player.sendMessage(formatMessage(msg, sender));
-         }
+         for(String msg : advancedBroadcast.broadcast)
+            player.sendMessage(formatMessage(msg, sender));
       }
    }
    
    // Helpers
+   
+   private static List<String> resolveConditions(CommandSender sender, String[] args, List<String> commands) {
+      if(commands.isEmpty())
+         return commands;
+      
+      for(int i = 0; i < commands.size(); i++) {
+         String line = commands.get(i);
+         if(line.startsWith(Config.ah("condition"))) {
+            String condition = line.substring(Config.ah("condition").length());
+            boolean result = evalCondition(condition, sender, args);
+            
+            commands.remove(i);
+            
+            if(!result && i < commands.size())
+               commands.remove(i);
+            
+            i--;
+            continue;
+         }
+         if(line.startsWith("\\" + Config.ah("condition")))
+            commands.set(i, line.substring(1));
+      }
+      return commands;
+   }
+   
    
    private static String replacePlaceholders(CommandSender sender, @NotNull String str) {
       str = Placeholders.apply(sender, str);
@@ -73,6 +99,8 @@ public class Execution {
    private static String replaceArgs(@NotNull String str, String[] args) {
       List<String> list = Arrays.asList(args);
       
+      str = str.replace(Config.ph("args-length"), str(args.length));
+      
       for (int i = 1; i <= args.length; i++)
          str = replaceArg(str, list, i, args);
       
@@ -81,9 +109,9 @@ public class Execution {
    
    private static String replaceArg(String str, List<String> list, int i, String[] args) {
       str = str
-        .replace(Config.ph("arg" + i), args[i - 1])                        // argX
+        .replace(Config.ph("arg" + i), args[i - 1]) // argX
         .replace(Config.ph("arg" + i + ".."), join(list, i, args.length)) //  argX..
-        .replace(Config.ph("arg.." + i), join(list, 1, i));              //   arg..X
+        .replace(Config.ph("arg.." + i), join(list, 1, i)); //   arg..X
       
       for (int j = i; j <= args.length; j++)
          str = str.replace(Config.ph("arg" + i + ".." + j), join(list, i, j)); // argX..Y
@@ -146,6 +174,13 @@ public class Execution {
    }
    
    // evaluation
+   
+   public static boolean evalCondition(List<String> conditions, CommandSender sender, String[] args) {
+      for(String str : conditions)
+         if(!evalCondition(str, sender, args))
+            return false;
+      return true;
+   }
    
    public static boolean evalCondition(String str, CommandSender sender, String[] args) {
       if (str == null || str.isBlank())
@@ -217,5 +252,9 @@ public class Execution {
       if (str == null)
          return false;
       return str.matches("[+-]?\\d+(\\.\\d+)?");
+   }
+   
+   private static String str(Object obj) {
+      return obj == null ? "" : obj.toString();
    }
 }

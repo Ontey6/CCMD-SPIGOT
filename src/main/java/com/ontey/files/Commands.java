@@ -2,12 +2,10 @@ package com.ontey.files;
 
 import com.ontey.CustomCommand;
 import com.ontey.Main;
-import com.ontey.execution.Execution;
+import com.ontey.holder.CommandPaths;
 import com.ontey.log.Log;
 import com.ontey.types.AdvancedBroadcast;
 import com.ontey.types.Args;
-import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,6 +24,7 @@ public class Commands {
       
       if (!dir.exists()) {
          if (!dir.mkdirs()) {
+            Log.info("Couldn't create the commands directory. Disabling plugin");
             Main.disablePlugin();
             return;
          }
@@ -60,8 +59,13 @@ public class Commands {
    // This returns a list from either a String or a list
    
    @NotNull
-   private static List<String> getField(YamlConfiguration config, String command, String field) {
-      String path = command + "." + field;
+   @Deprecated(since = "2.0")
+   public static List<String> getField(YamlConfiguration config, String command, String field) {
+      return getField(config, command + "." + field);
+   }
+   
+   @NotNull
+   public static List<String> getField(YamlConfiguration config, String path) {
       if(config.isString(path) && config.getString(path) != null)
          // noinspection ConstantConditions
          return new ArrayList<>(List.of(config.getString(path))); // just in case
@@ -70,61 +74,21 @@ public class Commands {
    
    @NotNull
    public static List<String> getMessages(YamlConfiguration config, String command) {
-      return getField(config, command, "message");
+      return getField(config, CommandPaths.message(command));
    }
    
    @NotNull
    public static List<String> getBroadcasts(YamlConfiguration config, String command) {
-      return getField(config, command, "broadcast");
+      return getField(config, CommandPaths.broadcast(command));
    }
    
    @NotNull
    public static List<String> getCommands(YamlConfiguration config, String command) {
-      return getField(config, command, "commands");
+      return getField(config, CommandPaths.commands(command));
    }
    
-   public static List<String> getCommands(YamlConfiguration config, String command, CommandSender sender, String[] args) {
-      String commandsPath = command + ".commands";
-      if (!config.isConfigurationSection(commandsPath))
-         return getField(config, command, "commands");
-      
-      return resolveCommandsSection(config, commandsPath, sender, args);
-   }
-   
-   private static List<String> resolveCommandsSection(YamlConfiguration config, String path, CommandSender sender, String[] args) {
-      ConfigurationSection section = config.getConfigurationSection(path);
-      if (section == null)
-         return new ArrayList<>(0);
-      
-      String condition = section.getString("condition", null);
-      if (condition != null) {
-         boolean result = Execution.evalCondition(condition, sender, args);
-         String branchPath = path + "." + (result ? "true" : "false");
-         
-         if (config.isConfigurationSection(branchPath))
-            return resolveCommandsSection(config, branchPath, sender, args);
-         
-         List<String> branchList = config.getStringList(branchPath);
-         if (!branchList.isEmpty())
-            return branchList;
-         
-         return new ArrayList<>(0);
-      }
-      
-      List<String> list = config.getStringList(path);
-      if (!list.isEmpty())
-         return list;
-      
-      int idx = path.indexOf(".commands");
-      if (idx > 0)
-         return getField(config, path.substring(0, idx), "commands");
-      
-      return new ArrayList<>(0);
-   }
-   
-   @NotNull
    public static List<String> getAliases(YamlConfiguration config, String command) {
-      return getField(config, command, "aliases");
+      return getField(config, CommandPaths.aliases(command));
    }
    
    public static Args getArgs(YamlConfiguration config, String command) {
@@ -132,24 +96,32 @@ public class Commands {
    }
    
    public static String getPermission(YamlConfiguration config, String command) {
-      return config.getString(command + ".permission");
+      String value = config.getString(CommandPaths.permission(command));
+      if(!requiresPermission(config, command))
+         return null;
+      if(value == null)
+         return Config.defaultPerm(command);
+      return value;
+   }
+   
+   public static boolean requiresPermission(YamlConfiguration config, String command) {
+      return config.getBoolean(CommandPaths.permissionRequired(command), true);
    }
    
    public static String getDescription(YamlConfiguration config, String command) {
-      return String.join("\n", getField(config, command, "description"));
+      return String.join("\n", getField(config, CommandPaths.description(command)));
    }
    
    public static String getUsage(YamlConfiguration config, String command) {
-      return String.join("\n", getField(config, command, "usage"));
+      return String.join("\n", getField(config, CommandPaths.usage(command)));
    }
    
    public static AdvancedBroadcast advancedBroadcast(YamlConfiguration config, String command) {
-      String pref = command + ".broadcast.";
-      int range = config.getInt(pref + "range", -1);
-      String permission = config.getString(pref + "permission");
-      List<String> broadcast = getField(config, command, "broadcast.broadcast");
-      String condition = config.getString(pref + "condition");
+      int range = config.getInt(CommandPaths.AdvancedBroadcast.range(command), -1);
+      String permission = config.getString(CommandPaths.AdvancedBroadcast.permission(command));
+      List<String> broadcast = getField(config, CommandPaths.AdvancedBroadcast.broadcast(command));
+      String condition = config.getString(CommandPaths.AdvancedBroadcast.condition(command));
       
-      return new AdvancedBroadcast(range, permission, broadcast, condition);
+      return new AdvancedBroadcast(range, permission, condition, broadcast);
    }
 }

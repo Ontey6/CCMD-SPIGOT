@@ -3,6 +3,7 @@ package com.ontey;
 import com.ontey.execution.Execution;
 import com.ontey.files.Commands;
 import com.ontey.files.Config;
+import com.ontey.tab.Tab;
 import com.ontey.types.AdvancedBroadcast;
 import com.ontey.types.Args;
 import org.bukkit.command.CommandSender;
@@ -21,6 +22,8 @@ public class CustomCommand {
    public AdvancedBroadcast advancedBroadcast;
    
    public Args args;
+   
+   public Tab tab;
    
    @Nullable
    public String permission, description, usage;
@@ -54,7 +57,9 @@ public class CustomCommand {
       this.messages = Commands.getMessages(config, name);
       this.broadcasts = Commands.getBroadcasts(config, name);
       this.advancedBroadcast = AdvancedBroadcast.of(config, name);
+      this.commands = Commands.getCommands(config, name);
       this.args = Commands.getArgs(config, name);
+      this.tab = new Tab(config, name);
    }
    
    public void execute(CommandSender sender, String label, String[] args) {
@@ -63,8 +68,6 @@ public class CustomCommand {
       
       if(Config.HOTSWAP)
          loadMutable(true);
-      
-      commands = Commands.getCommands(config, name, sender, args);
       
       Execution.runCommands(commands, sender, args);
       Execution.sendMessages(messages, sender, args);
