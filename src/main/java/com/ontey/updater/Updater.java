@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class Updater {
    
-   private static final Source SOURCE = Source.SPIGOT;
+   private static final Source SOURCE = Source.HANGAR;
    
    private static final int SPIGOT_RESOURCE_ID = 128478;
    

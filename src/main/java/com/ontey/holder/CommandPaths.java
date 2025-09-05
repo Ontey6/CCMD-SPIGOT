@@ -2,6 +2,9 @@ package com.ontey.holder;
 
 import static com.ontey.files.Config.getOrDefault;
 
+/* Absolutely not Written by AI */
+/* Yeah, I like to enslave it */
+
 public class CommandPaths {
    
    // Methods
@@ -46,6 +49,14 @@ public class CommandPaths {
       return replaced(COMMANDS, command);
    }
    
+   public static String namespace(String command) {
+      return replaced(NAMESPACE, command);
+   }
+   
+   public static String noTab(String command) {
+      return replaced(NO_TAB, command);
+   }
+   
    // Constants
    
    private static String MESSAGE;
@@ -58,6 +69,8 @@ public class CommandPaths {
    private static String ARGS;
    private static String TAB;
    private static String COMMANDS;
+   private static String NAMESPACE;
+   private static String NO_TAB;
    
    // Load
    
@@ -72,6 +85,8 @@ public class CommandPaths {
       ARGS = getOrDefault("paths.args", "%cmd.args");
       TAB = getOrDefault("paths.tab", "%cmd.tab");
       COMMANDS = getOrDefault("paths.commands", "%cmd.commands");
+      NAMESPACE = getOrDefault("paths.namespace", "%cmd.namespace");
+      NO_TAB = getOrDefault("paths.no-tab", "%cmd.no-tab");
       
       AdvancedBroadcast.load();
    }
