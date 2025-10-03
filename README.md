@@ -1,1 +1,1 @@
-Bukkit Page: not available yet
+**Unsupported and not maintained since v0.4**
